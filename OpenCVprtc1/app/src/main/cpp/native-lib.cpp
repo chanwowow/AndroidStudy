@@ -19,5 +19,5 @@ Java_com_example_opencvprtc1_MainActivity_ConvertRGBtoGray(JNIEnv *env, jobject 
     Mat &matInput = *(Mat *)mat_addr_input;
     Mat &matResult = *(Mat *)mat_addr_result;
 
-    cvtColor(matInput, matResult, COLOR_RGBA2GRAY);
+    cvtColor(matInput, matResult, COLOR_RGB2GRAY);
 }
