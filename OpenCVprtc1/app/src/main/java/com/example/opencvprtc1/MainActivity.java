@@ -3,6 +3,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.DialogInterface;
+import android.graphics.Matrix;
 import android.os.Bundle;
 import android.annotation.TargetApi;
 import android.content.pm.PackageManager;
@@ -76,10 +77,13 @@ public class MainActivity extends AppCompatActivity
 
 
          if(cascade.empty()){
-            String path = Environment.getExternalStorageDirectory().getAbsolutePath() + "/haarcascade_frontalface_default";
+             String path = this.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS) + "/haarcascade_frontalface_default.xml";
+            //String path = Environment.getExternalStorageDirectory().getAbsolutePath() + "/haarcascade_frontalface_default.xml";
             cascade.load(path);
-            //
-             int a =1;
+            //  => load 했음에도 cascade 가 계속 empty상태
+
+             int a=1;
+
         }
         if (cascade.empty()) return;
 
@@ -121,7 +125,8 @@ public class MainActivity extends AppCompatActivity
         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
         mOpenCvCameraView.setCvCameraViewListener(this);
        // mOpenCvCameraView.enableView();
-        mOpenCvCameraView.setCameraIndex(0); // front-camera(1),  back-camera(0)
+        mOpenCvCameraView.setCameraIndex(1); // front-camera(1),  back-camera(0)
+
 
         // 확인용 토스트 메세지
         //Toast toastMsg = Toast.makeText(this.getApplicationContext(),"check point!", Toast.LENGTH_SHORT);
