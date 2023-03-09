@@ -13,8 +13,11 @@ import android.view.View
 import android.widget.TextView
 import android.os.PersistableBundle
 import android.provider.Telephony
+import android.telephony.ServiceState
 import android.telephony.TelephonyCallback
 import android.telephony.TelephonyCallback.DataConnectionStateListener
+import android.telephony.TelephonyCallback.ImsCallDisconnectCauseListener
+import android.telephony.TelephonyCallback.ServiceStateListener
 import android.telephony.TelephonyManager
 import android.telephony.ims.ImsReasonInfo
 import android.util.Log
@@ -29,7 +32,8 @@ class FlightToggle : AppCompatActivity() {
 
     private lateinit var printOnScreen: TextView
     private lateinit var telephonyManager: TelephonyManager
-    private lateinit var telephonyManager2: TelephonyManager
+
+    //private var outOfServiceTime: Long?=null
 
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,58 +49,84 @@ class FlightToggle : AppCompatActivity() {
         telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
         registerTelephonyCallback(telephonyManager)
 
-        // 비행기모드 토글버튼
+        // #2#  비행기모드 토글버튼
         val toggleAirplaneModeButton =findViewById<ToggleButton>(R.id.toggleButton)
         toggleAirplaneModeButton.setOnClickListener{
             toggleAirplaneMode()
         }
 
-        //setAirplaneMode(true)
-        //setAirplaneMode(false)
     }
+
     // 아래 코드 reuse 가능하게 바꿔야할듯
+
+
+
     private fun registerTelephonyCallback(telephonyManager: TelephonyManager){
         telephonyManager.registerTelephonyCallback(
             mainExecutor,
-            object : TelephonyCallback(), DataConnectionStateListener {
-                override fun onDataConnectionStateChanged(state: Int, networkType: Int) {
-                    printOnScreen.text ="Changing Something!!!!!####"
-
-                    when (state) {
-                        TelephonyManager.DATA_CONNECTED -> {
-                            printOnScreen.text ="Connected CHANWOO"
+            object : TelephonyCallback(), ServiceStateListener {
+                override fun onServiceStateChanged(serviceState: ServiceState) {
+                    when (serviceState.state) {
+                        ServiceState.STATE_IN_SERVICE->{
+                            printOnScreen.text = "서비스 중 ..."
+                            //outOfServiceTime=null
                         }
-                        TelephonyManager.DATA_DISCONNECTED -> {
-                            printOnScreen.text ="Disconnected CHanwoo"
+                        ServiceState.STATE_OUT_OF_SERVICE->{
+                            printOnScreen.text = "OUT OF SERVICE XXXX"
                         }
-                        TelephonyManager.DATA_SUSPENDED -> {
-                            printOnScreen.text ="Suspended CHanwoo"
+                        ServiceState.STATE_EMERGENCY_ONLY->{
+                            printOnScreen.text = "EMERGENCY ONLY"
+                            //outOfServiceTime=null
                         }
                     }
                 }
             })
+
     }
 
-    // IMS Call drop 감지 시도
-//    private val imsCallDisconnectListener = object : TelephonyCallback.ImsCallDisconnectCauseListener() {
-//        override fun onImsCallDisconnectCauseChanged(imsReasonInfo: ImsReasonInfo?) {
-//            super.onImsCallDisconnectCauseChanged(imsReasonInfo)
-//            Log.d("IMS_CALL", "IMS call disconnected with reason: ${imsReasonInfo?.code}")
-//            // add your own logic here to handle the IMS call disconnect cause
-//        }
+    // #1. 텔레포니 onDataConnectionStateChanged 버전
+//    private fun registerTelephonyCallback(telephonyManager: TelephonyManager){
+//        telephonyManager.registerTelephonyCallback(
+//            mainExecutor,
+//            object : TelephonyCallback(), DataConnectionStateListener {
+//                override fun onDataConnectionStateChanged(state: Int, networkType: Int) {
+//                    printOnScreen.text ="########@@!@@"
+//
+//                    when (state) {
+//                        TelephonyManager.DATA_CONNECTED -> {
+//                            printOnScreen.text ="Connected"
+//                        }
+//                        TelephonyManager.DATA_DISCONNECTED -> {
+//                            printOnScreen.text ="Disconnected"
+//                        }
+//                        TelephonyManager.DATA_SUSPENDED -> {
+//                            printOnScreen.text ="Suspended"
+//                        }
+//                        TelephonyManager.DATA_UNKNOWN -> {
+//                            printOnScreen.text ="Unknown"
+//                        }
+//                        TelephonyManager.DATA_CONNECTING -> {
+//                            printOnScreen.text ="CONNECTING"
+//                        }
+//                        TelephonyManager.DATA_DISCONNECTING -> {
+//                            printOnScreen.text ="DISCONNECTING"
+//                        }
+//                        TelephonyManager.DATA_HANDOVER_IN_PROGRESS-> {
+//                            printOnScreen.text ="HANDOVER! "
+//                        }
+//                    }
+//                }
+//            })
+//
 //    }
 
-
+    ///#2# 비행기토글. API17 이후로 막혔다. 간접방법 써야한다!
     private fun toggleAirplaneMode() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val settingsPanelIntent = Intent(Settings.ACTION_AIRPLANE_MODE_SETTINGS)
-            startActivityForResult(settingsPanelIntent, 0)
-        } else {
-            val isAirplaneModeOn = Settings.Global.getInt(contentResolver, Settings.Global.AIRPLANE_MODE_ON, 0) != 0
-            Settings.Global.putInt(contentResolver, Settings.Global.AIRPLANE_MODE_ON, if (isAirplaneModeOn) 0 else 1)
-           // Toast.makeText(this, "Airplane mode has been toggled", Toast.LENGTH_SHORT).show()
-        }
+        val settingsPanelIntent = Intent(Settings.ACTION_AIRPLANE_MODE_SETTINGS)
+        startActivityForResult(settingsPanelIntent, 0)
     }
 
+
 }
+
 
