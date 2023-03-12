@@ -10,7 +10,6 @@ import android.os.Bundle
 import android.content.Intent
 import android.net.Uri
 import android.view.View
-import android.widget.TextView
 import android.os.PersistableBundle
 import android.provider.Telephony
 import android.telephony.ServiceState
@@ -20,38 +19,44 @@ import android.telephony.TelephonyCallback.ImsCallDisconnectCauseListener
 import android.telephony.TelephonyCallback.ServiceStateListener
 import android.telephony.TelephonyManager
 import android.telephony.ims.ImsReasonInfo
-import android.util.Log
-import android.widget.Button
-import android.widget.Toast
-import android.widget.ToggleButton
+import android.widget.*
 import androidx.annotation.RequiresApi
+import androidx.core.content.ContextCompat
 import kotlinx.coroutines.delay
 
 
 class FlightToggle : AppCompatActivity() {
 
-    private lateinit var printOnScreen: TextView
-    private lateinit var telephonyManager: TelephonyManager
-
-    //private var outOfServiceTime: Long?=null
+   // private lateinit var printOnScreen: TextView
 
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_flight_toggle)
 
-        printOnScreen=findViewById(R.id.text_network)
+
+        //printOnScreen=findViewById(R.id.text_network)
 
 
         val checkInterval = intent.getIntExtra("value", 0) // Main Acticity에서 체크간격 받음
 
-        // Get the TelephonyManager
-        telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
-        registerTelephonyCallback(telephonyManager)
+        val serviceIntent= Intent(this, ForegroundService::class.java)
+        // 서비스 시작 버튼
+        val toggleServiceButton = findViewById<ToggleButton>(R.id.serviceButton)
+        toggleServiceButton.setOnCheckedChangeListener { _, isChecked ->
+            if(isChecked){
+                ContextCompat.startForegroundService(this,serviceIntent)
+                Toast.makeText(this,"Service start...",Toast.LENGTH_SHORT).show()
+            }else{
+                // close는 어케하지???
+                Toast.makeText(this,"Service End!",Toast.LENGTH_SHORT).show()
+            }
+
+        }
 
         // #2#  비행기모드 토글버튼
-        val toggleAirplaneModeButton =findViewById<ToggleButton>(R.id.toggleButton)
-        toggleAirplaneModeButton.setOnClickListener{
+        val setAirplaneModeButton =findViewById<Button>(R.id.flightButton)
+        setAirplaneModeButton.setOnClickListener{
             toggleAirplaneMode()
         }
 
@@ -59,73 +64,16 @@ class FlightToggle : AppCompatActivity() {
 
     // 아래 코드 reuse 가능하게 바꿔야할듯
 
-
-
-    private fun registerTelephonyCallback(telephonyManager: TelephonyManager){
-        telephonyManager.registerTelephonyCallback(
-            mainExecutor,
-            object : TelephonyCallback(), ServiceStateListener {
-                override fun onServiceStateChanged(serviceState: ServiceState) {
-                    when (serviceState.state) {
-                        ServiceState.STATE_IN_SERVICE->{
-                            printOnScreen.text = "서비스 중 ..."
-                            //outOfServiceTime=null
-                        }
-                        ServiceState.STATE_OUT_OF_SERVICE->{
-                            printOnScreen.text = "OUT OF SERVICE XXXX"
-                        }
-                        ServiceState.STATE_EMERGENCY_ONLY->{
-                            printOnScreen.text = "EMERGENCY ONLY"
-                            //outOfServiceTime=null
-                        }
-                    }
-                }
-            })
-
-    }
-
-    // #1. 텔레포니 onDataConnectionStateChanged 버전
-//    private fun registerTelephonyCallback(telephonyManager: TelephonyManager){
-//        telephonyManager.registerTelephonyCallback(
-//            mainExecutor,
-//            object : TelephonyCallback(), DataConnectionStateListener {
-//                override fun onDataConnectionStateChanged(state: Int, networkType: Int) {
-//                    printOnScreen.text ="########@@!@@"
-//
-//                    when (state) {
-//                        TelephonyManager.DATA_CONNECTED -> {
-//                            printOnScreen.text ="Connected"
-//                        }
-//                        TelephonyManager.DATA_DISCONNECTED -> {
-//                            printOnScreen.text ="Disconnected"
-//                        }
-//                        TelephonyManager.DATA_SUSPENDED -> {
-//                            printOnScreen.text ="Suspended"
-//                        }
-//                        TelephonyManager.DATA_UNKNOWN -> {
-//                            printOnScreen.text ="Unknown"
-//                        }
-//                        TelephonyManager.DATA_CONNECTING -> {
-//                            printOnScreen.text ="CONNECTING"
-//                        }
-//                        TelephonyManager.DATA_DISCONNECTING -> {
-//                            printOnScreen.text ="DISCONNECTING"
-//                        }
-//                        TelephonyManager.DATA_HANDOVER_IN_PROGRESS-> {
-//                            printOnScreen.text ="HANDOVER! "
-//                        }
-//                    }
-//                }
-//            })
-//
-//    }
-
     ///#2# 비행기토글. API17 이후로 막혔다. 간접방법 써야한다!
     private fun toggleAirplaneMode() {
         val settingsPanelIntent = Intent(Settings.ACTION_AIRPLANE_MODE_SETTINGS)
         startActivityForResult(settingsPanelIntent, 0)
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+
+    }
 
 }
 
