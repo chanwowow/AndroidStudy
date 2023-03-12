@@ -1,5 +1,6 @@
 package com.example.rcthelper
 
+import android.annotation.SuppressLint
 import android.app.*
 import android.app.Notification
 import android.app.PendingIntent
@@ -16,7 +17,6 @@ import androidx.appcompat.app.AppCompatActivity
 class ForegroundService : Service() {
 
     private val CHANNEL_ID = "ForgroundServiceChannel"
-    private lateinit var printOnScreen: TextView
     private lateinit var telephonyManager: TelephonyManager
 
     override fun onBind(intent: Intent): IBinder {
@@ -25,8 +25,6 @@ class ForegroundService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-
-        printOnScreen=findViewById(R.id.text_network) /// 이거 appcompatactivity에 있는 놈인데 여기서 바로 출력 말고 다른곳으로 데이터 보내서 거기서 출력해야하는 듯하다
 
         telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
         registerTelephonyCallback(telephonyManager)
@@ -65,26 +63,31 @@ class ForegroundService : Service() {
         telephonyManager.registerTelephonyCallback(
             mainExecutor,
             object : TelephonyCallback(), TelephonyCallback.ServiceStateListener {
+                @SuppressLint("SuspiciousIndentation")
                 override fun onServiceStateChanged(serviceState: ServiceState) {
-                    when (serviceState.state) {
+                    val stateStr :String
+                        when (serviceState.state) {
                         ServiceState.STATE_IN_SERVICE->{
-                            printOnScreen.text = "서비스 중 ..."
+                            stateStr= "서비스 중 ..."
                             //outOfServiceTime=null
                         }
                         ServiceState.STATE_OUT_OF_SERVICE->{
-                            printOnScreen.text = "OUT OF SERVICE XXXX"
+                            stateStr = "OUT OF SERVICE XXXX"
                         }
                         ServiceState.STATE_EMERGENCY_ONLY->{
-                            printOnScreen.text = "EMERGENCY ONLY"
+                            stateStr = "EMERGENCY ONLY"
                             //outOfServiceTime=null
                         }
                         ServiceState.STATE_POWER_OFF->{
-                            printOnScreen.text="비행기모드 상태"
+                            stateStr="비행기모드 상태"
                         }
                         else->{
-                            printOnScreen.text="INSERT SIM"
+                            stateStr="INSERT SIM"
                         }
                     }
+                    val intent =Intent("PhoneServiceStateBCR")
+                    intent.putExtra("serviceState",stateStr )
+                    sendBroadcast(intent) // BCR 내용정리
                 }
             })
 

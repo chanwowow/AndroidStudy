@@ -2,12 +2,10 @@ package com.example.rcthelper
 
 import android.provider.Settings
 import android.annotation.SuppressLint
-import android.content.ContentResolver
-import android.content.Context
+import android.content.*
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.content.Intent
 import android.net.Uri
 import android.view.View
 import android.os.PersistableBundle
@@ -27,15 +25,26 @@ import kotlinx.coroutines.delay
 
 class FlightToggle : AppCompatActivity() {
 
-   // private lateinit var printOnScreen: TextView
+    private lateinit var printOnScreen: TextView
+    private lateinit var BCR : BroadcastReceiver
 
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_flight_toggle)
 
+        printOnScreen=findViewById(R.id.text_network)
 
-        //printOnScreen=findViewById(R.id.text_network)
+        BCR = object :BroadcastReceiver(){
+            override fun onReceive(context: Context?, intent: Intent?) {
+                if (intent != null) {
+                    if(intent.hasExtra("serviceState")){
+                        val serviceState=intent?.getStringExtra("serviceState")
+                        printOnScreen.text=serviceState
+                    }
+                }
+            }
+        }
 
 
         val checkInterval = intent.getIntExtra("value", 0) // Main Acticity에서 체크간격 받음
@@ -68,6 +77,11 @@ class FlightToggle : AppCompatActivity() {
     private fun toggleAirplaneMode() {
         val settingsPanelIntent = Intent(Settings.ACTION_AIRPLANE_MODE_SETTINGS)
         startActivityForResult(settingsPanelIntent, 0)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        registerReceiver(BCR, IntentFilter("PhoneServiceStateBCR"))
     }
 
     override fun onDestroy() {
